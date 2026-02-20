@@ -1,1 +1,442 @@
-PASTE_HTML_HERE
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Für dich ♥</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose: #c0384b;
+    --blush: #f2a7b3;
+    --cream: #fdf6f0;
+    --gold: #c9a96e;
+    --dark: #1a0a0e;
+    --card-bg: #2a0f15;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    font-family: 'Cormorant Garamond', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .hearts-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .heart-float {
+    position: absolute;
+    bottom: -40px;
+    opacity: 0;
+    animation: floatUp linear infinite;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 0.3; }
+    90% { opacity: 0.1; }
+    100% { transform: translateY(-110vh); opacity: 0; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: var(--cream);
+    margin-bottom: 0.3rem;
+  }
+
+  .subtitle {
+    color: var(--blush);
+    font-style: italic;
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .stats {
+    color: var(--gold);
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.2rem;
+  }
+
+  /* Card grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 0 auto 1.2rem;
+    width: min(420px, 95vw);
+  }
+
+  .card {
+    aspect-ratio: 1;
+    cursor: pointer;
+    perspective: 600px;
+  }
+
+  .card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.45s ease;
+  }
+
+  .card.flipped .card-inner,
+  .card.matched .card-inner {
+    transform: rotateY(180deg);
+  }
+
+  .card-front, .card-back {
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backface-visibility: hidden;
+    font-size: 2rem;
+  }
+
+  .card-front {
+    background: var(--card-bg);
+    border: 1px solid #3d1620;
+    color: var(--rose);
+    font-size: 1.4rem;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover:not(.matched) .card-front {
+    border-color: var(--rose);
+    box-shadow: 0 0 12px rgba(192,56,75,0.3);
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, #2a0f15, #3d1a22);
+    border: 1px solid var(--rose);
+    transform: rotateY(180deg);
+    font-size: 2.2rem;
+  }
+
+  .card.matched .card-back {
+    border-color: var(--gold);
+    box-shadow: 0 0 14px rgba(201,169,110,0.35);
+    animation: matchPop 0.3s ease;
+  }
+
+  @keyframes matchPop {
+    0% { transform: rotateY(180deg) scale(1); }
+    50% { transform: rotateY(180deg) scale(1.12); }
+    100% { transform: rotateY(180deg) scale(1); }
+  }
+
+  /* Button */
+  .btn {
+    background: transparent;
+    border: 1.5px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.6rem 2rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s;
+    z-index: -1;
+  }
+
+  .btn:hover { color: var(--dark); }
+  .btn:hover::before { transform: scaleX(1); }
+
+  /* Win overlay */
+  .win-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,2,5,0.88);
+    z-index: 50;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .win-overlay.show { display: flex; }
+
+  .win-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    color: var(--cream);
+    animation: zoomIn 0.5s ease;
+    margin-bottom: 0.5rem;
+  }
+
+  .win-hearts {
+    font-size: 2.5rem;
+    display: block;
+    margin: 0.8rem 0;
+    animation: pulse 0.9s ease infinite alternate;
+  }
+
+  .dancing-eggplant {
+    font-size: 4rem;
+    display: block;
+    margin: 0.5rem auto;
+    animation: dance 0.5s ease infinite alternate;
+    transform-origin: bottom center;
+  }
+
+  @keyframes dance {
+    0%   { transform: rotate(-18deg) translateY(0px) scale(1); }
+    100% { transform: rotate(18deg) translateY(-12px) scale(1.1); }
+  }
+
+  .win-message {
+    font-size: 1.5rem;
+    color: var(--blush);
+    font-style: italic;
+    margin: 0.8rem 0 0.5rem;
+    line-height: 1.5;
+  }
+
+  .win-stats {
+    color: var(--gold);
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.8rem;
+  }
+
+  @keyframes zoomIn {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.18); }
+  }
+
+  .confetti-piece {
+    position: fixed;
+    border-radius: 50%;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  @keyframes confettiFall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  .divider {
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 1rem auto 1.5rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="hearts-bg" id="heartsBg"></div>
+
+<div class="container">
+  <div class="title">Memory ♥</div>
+  <div class="subtitle">Find all matching pairs — made with love for you</div>
+  <div class="stats" id="stats">Pairs found: 0 / 8 &nbsp;·&nbsp; Moves: 0</div>
+
+  <div class="grid" id="grid"></div>
+
+  <button class="btn" onclick="initGame()">Neu mischen ↺</button>
+</div>
+
+<!-- Win screen -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title">Gewonnen! 🎉</div>
+  <span class="win-hearts">♥ ♥ ♥</span>
+  <span class="dancing-eggplant">🍆</span>
+  <div style="color: var(--blush); font-style: italic; font-size: 0.95rem; margin-bottom: 0.5rem;">— Big Eggplant is proud of you 🍆</div>
+  <div style="color: var(--cream); font-family: 'Playfair Display', serif; font-size: 1.2rem; margin: 0.6rem 0 0.3rem; letter-spacing: 0.03em;">Besuche Karsten, um einen ganz besonderen Preis zu bekommen. 🎁</div>
+  <div class="win-message" id="winMsg"></div>
+  <div class="win-stats" id="winStat"></div>
+  <div class="divider"></div>
+  <button class="btn" onclick="playAgain()">Nochmal spielen</button>
+</div>
+
+<script>
+  // Floating hearts
+  const bg = document.getElementById('heartsBg');
+  for (let i = 0; i < 16; i++) {
+    const h = document.createElement('div');
+    h.className = 'heart-float';
+    h.textContent = ['♥','♡','❤','💕'][Math.floor(Math.random()*4)];
+    h.style.left = Math.random() * 100 + '%';
+    h.style.fontSize = (0.8 + Math.random() * 1.2) + 'rem';
+    h.style.color = `hsl(${338 + Math.random()*25}, 60%, ${50+Math.random()*20}%)`;
+    h.style.animationDuration = (10 + Math.random() * 12) + 's';
+    h.style.animationDelay = (Math.random() * 10) + 's';
+    bg.appendChild(h);
+  }
+
+  const EMOJIS = ['♥','💖','🌹','💝','🌸','✿','💗','❥'];
+  const messages = [
+    "Du bist mein Sonnenschein. ☀️",
+    "Ich denke immer an dich. ♥",
+    "Du machst alles schöner.",
+    "Jeder Tag mit dir ist besonders.",
+    "Du bist wunderschön — inside and out."
+  ];
+
+  let cards = [];
+  let flipped = [];
+  let matched = 0;
+  let moves = 0;
+  let locked = false;
+
+  function initGame() {
+    matched = 0;
+    moves = 0;
+    flipped = [];
+    locked = false;
+    updateStats();
+
+    // Shuffle pairs
+    const pairs = [...EMOJIS, ...EMOJIS];
+    pairs.sort(() => Math.random() - 0.5);
+
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    cards = [];
+
+    pairs.forEach((emoji, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.emoji = emoji;
+      card.dataset.index = i;
+      card.innerHTML = `
+        <div class="card-inner">
+          <div class="card-front">♡</div>
+          <div class="card-back">${emoji}</div>
+        </div>`;
+      card.addEventListener('click', () => flipCard(card));
+      grid.appendChild(card);
+      cards.push(card);
+    });
+  }
+
+  function flipCard(card) {
+    if (locked) return;
+    if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+    card.classList.add('flipped');
+    flipped.push(card);
+
+    if (flipped.length === 2) {
+      locked = true;
+      moves++;
+      updateStats();
+      checkMatch();
+    }
+  }
+
+  function checkMatch() {
+    const [a, b] = flipped;
+    if (a.dataset.emoji === b.dataset.emoji) {
+      // Match!
+      setTimeout(() => {
+        a.classList.add('matched');
+        b.classList.add('matched');
+        a.classList.remove('flipped');
+        b.classList.remove('flipped');
+        flipped = [];
+        locked = false;
+        matched++;
+        updateStats();
+        if (matched === 8) setTimeout(showWin, 500);
+      }, 500);
+    } else {
+      // No match — flip back
+      setTimeout(() => {
+        a.classList.remove('flipped');
+        b.classList.remove('flipped');
+        flipped = [];
+        locked = false;
+      }, 900);
+    }
+  }
+
+  function updateStats() {
+    document.getElementById('stats').textContent =
+      `Pairs found: ${matched} / 8  ·  Moves: ${moves}`;
+  }
+
+  function showWin() {
+    document.getElementById('winMsg').textContent =
+      messages[Math.floor(Math.random() * messages.length)];
+    document.getElementById('winStat').textContent =
+      `Solved in ${moves} moves ✦ Du bist fantastisch!`;
+    document.getElementById('winOverlay').classList.add('show');
+    launchConfetti();
+  }
+
+  function launchConfetti() {
+    const colors = ['#c0384b','#f2a7b3','#c9a96e','#e8c5cb','#fff'];
+    for (let i = 0; i < 80; i++) {
+      setTimeout(() => {
+        const c = document.createElement('div');
+        c.className = 'confetti-piece';
+        c.style.left = Math.random() * 100 + 'vw';
+        c.style.top = '-10px';
+        c.style.background = colors[Math.floor(Math.random() * colors.length)];
+        c.style.width = c.style.height = (5 + Math.random() * 8) + 'px';
+        c.style.animationDuration = (2 + Math.random() * 2) + 's';
+        c.style.animationDelay = Math.random() * 0.8 + 's';
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 4000);
+      }, i * 25);
+    }
+  }
+
+  function playAgain() {
+    document.getElementById('winOverlay').classList.remove('show');
+    initGame();
+  }
+
+  initGame();
+</script>
+</body>
+</html>
